@@ -108,8 +108,8 @@ function App() {
   const [manualDDI] = useLocalStorage('manualDDI', { enabled: false })
 
   const effectiveSummary = useMemo(() => (
-    policy ? { ...policy, meta, areas } : { meta, areas }
-  ), [meta, policy, areas])
+    policy ? { ...policy, meta, areas, cec: manualCEC, cgep: manualCGEP, ddi: manualDDI } : { meta, areas, cec: manualCEC, cgep: manualCGEP, ddi: manualDDI }
+  ), [meta, policy, areas, manualCEC, manualCGEP, manualDDI])
 
   const enabledAreas = useMemo(() => {
     const list = Array.isArray(areas) ? areas : []

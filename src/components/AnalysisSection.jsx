@@ -91,6 +91,36 @@ export default function AnalysisSection({ summary, enabledAreas }) {
           }} />
           {catalogOverride && <button className="btn" onClick={() => setCatalogOverride(null)}>Limpar catálogo</button>}
         </div>
+        <div className="row" style={{gap:12, alignItems:'center'}} aria-label="Carregamento por URL">
+          <strong>Carregar por URL</strong>
+          <input type="url" placeholder="https://.../bestPractices.json" onKeyDown={async (e) => {
+            if (e.key === 'Enter') {
+              const url = e.currentTarget.value;
+              if (!url) return;
+              try {
+                const res = await fetch(url);
+                const obj = await res.json();
+                setCatalogOverride(obj);
+              } catch (err) {
+                console.error(err);
+                alert('Não foi possível carregar o catálogo.');
+              }
+            }
+          }} style={{width:320}} />
+          <button className="btn" onClick={async (e) => {
+            const input = e.currentTarget.previousSibling;
+            const url = input && input.value;
+            if (!url) return;
+            try {
+              const res = await fetch(url);
+              const obj = await res.json();
+              setCatalogOverride(obj);
+            } catch (err) {
+              console.error(err);
+              alert('Não foi possível carregar o catálogo.');
+            }
+          }}>Carregar</button>
+        </div>
       </div>
       {activeAreas.map(a => (
         <Collapsible key={a.key} title={`Análise ${a.label}`} defaultOpen={false}>
