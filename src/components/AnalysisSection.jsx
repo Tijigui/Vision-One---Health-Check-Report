@@ -12,7 +12,7 @@ const AREAS = [
 ];
 
 function SeverityChip({ sev }) {
-  const color = sev === 'high' ? 'warn' : sev === 'medium' ? 'warn' : 'success';
+  const color = sev === 'high' ? 'error' : sev === 'medium' ? 'warn' : 'success';
   const label = sev === 'high' ? 'Alta' : sev === 'medium' ? 'Média' : 'Baixa';
   const icon = sev === 'high' ? '⛔' : sev === 'medium' ? '⚠' : '✔';
   const aria = `Severidade ${label}`;

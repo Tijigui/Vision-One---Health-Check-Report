@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import './App.css'
 import './index.css'
 import { parseCmpolicyText as parseCMP } from './services/cmpolicy'
@@ -13,6 +13,8 @@ import AnalysisSection from './components/AnalysisSection'
 import { useToast } from './components/ToastProvider.jsx'
 import { useI18n } from './components/I18nProvider.jsx'
 import ManualSection from './components/ManualSection.jsx'
+import ImportSection from './components/ImportSection.jsx'
+import PreviewSection from './components/PreviewSection.jsx'
 
 function useDropzone(onFiles) {
   const [dragOver, setDragOver] = useState(false)
@@ -42,7 +44,7 @@ function Tabs({ tabs, active, onChange }) {
   return (
     <div className="quick-nav" role="tablist" aria-label="Seções">
       {tabs.map(t => (
-        <button key={t.key} role="tab" aria-selected={active===t.key} className={`btn ${active===t.key?'active':''}`} onClick={() => onChange(t.key)}>
+        <button key={t.key} role="tab" type="button" aria-selected={active===t.key} className={`btn ${active===t.key?'active':''}`} onClick={() => onChange(t.key)}>
           {t.label}
         </button>
       ))}
@@ -95,6 +97,7 @@ function Sidebar({ sections }) {
 function App() {
   const { toast } = useToast()
   const { t, lang, setLang } = useI18n()
+  const VALID_TABS = ['import','meta','areas','analysis','manual','models','preview']
   const [policyText, setPolicyText] = useLocalStorage('policyText', '')
   const [policy, setPolicy] = useLocalStorage('policy', null)
   const [templateArea, setTemplateArea] = useLocalStorage('templateArea', 'endpoint')
@@ -132,7 +135,40 @@ function App() {
     { key: 'preview', label: t('tabs.preview') },
   ]
 
-  const drop = useDropzone(async (files) => {
+  // Sanitize aba ativa se vier inválida do localStorage
+  useEffect(() => {
+    if (!activeTab || !VALID_TABS.includes(activeTab)) {
+      setActiveTab('import')
+    }
+  }, [activeTab])
+
+  // Sync com hash da URL (#import, #analysis, etc.)
+  useEffect(() => {
+    const applyFromHash = () => {
+      const k = (window.location.hash || '').replace('#','')
+      if (k && VALID_TABS.includes(k) && k !== activeTab) {
+        setActiveTab(k)
+      }
+    }
+    applyFromHash()
+    window.addEventListener('hashchange', applyFromHash)
+    return () => window.removeEventListener('hashchange', applyFromHash)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Atualiza hash e mostra toast ao trocar de aba
+  useEffect(() => {
+    if (!activeTab || !VALID_TABS.includes(activeTab)) return
+    if ((window.location.hash || '').replace('#','') !== activeTab) {
+      window.location.hash = activeTab
+    }
+    const label = quickNavSections.find(s => s.key === activeTab)?.label
+    if (label) {
+      toast(`Aba: ${label} carregada`, 'info')
+    }
+  }, [activeTab, quickNavSections, toast])
+
+  const handleFiles = useCallback(async (files) => {
     const file = files[0]
     const text = await file.text()
     setPolicyText(text)
@@ -143,7 +179,9 @@ function App() {
     } catch (e) {
       toast(String(e?.message || e), 'error')
     }
-  })
+  }, [setPolicyText, setPolicy, toast, t, setActiveTab])
+
+  const drop = useDropzone(handleFiles)
 
   const handleExportJson = () => {
     try {
@@ -184,41 +222,25 @@ function App() {
           <Tabs tabs={quickNavSections} active={activeTab} onChange={setActiveTab} />
         </header>
 
+        {/* Fallback visual para aba inválida */}
+        {!activeTab || !VALID_TABS.includes(activeTab) ? (
+          <div className="card" role="status" aria-live="polite">
+            <div className="skeleton text" />
+            <div className="skeleton block" />
+            <div className="preview-block"><p className="muted">Selecione uma aba para começar</p></div>
+          </div>
+        ) : null}
+
         {activeTab === 'import' && (
-          <section id="import" className="card">
-            <h2>{t('tabs.import')}</h2>
-            <div ref={drop.ref} className={`dropzone ${drop.dragOver?'dragover':''}`}>
-              {t('dropzone.hint')}
-              <div className="actions">
-                <input aria-label="Escolher arquivo" type="file" accept=".cmpolicy,.json" onChange={async (e) => {
-                  const f = e.target.files?.[0]
-                  if (!f) return
-                  const text = await f.text()
-                  setPolicyText(text)
-                  try {
-                    const parsed = await parseCMP(text)
-                    setPolicy(parsed)
-                    toast(t('import.success'), 'success', { label: t('tabs.analysis'), onClick: () => setActiveTab('analysis') })
-                  } catch (err) {
-                    toast(String(err?.message || err), 'error')
-                  }
-                }} />
-                <button className="btn" onClick={() => { setPolicy(null); setPolicyText('') }}>{t('dropzone.clear')}</button>
-              </div>
-            </div>
-            {!policy && (
-              <div style={{marginTop:12}}>
-                <div className="skeleton text" />
-                <div className="skeleton block" />
-              </div>
-            )}
-            {policy && (
-              <div className="preview-block">
-                <div className="preview-header"><strong>{t('summary.title')}</strong><span className="badge">{t('summary.badge.ok')}</span></div>
-                <pre style={{whiteSpace:'pre-wrap'}}>{policyText.slice(0,800)}{policyText.length>800?'...':''}</pre>
-              </div>
-            )}
-          </section>
+          <ImportSection
+            t={t}
+            drop={drop}
+            policy={policy}
+            policyText={policyText}
+            setPolicy={setPolicy}
+            setPolicyText={setPolicyText}
+            onFiles={handleFiles}
+          />
         )}
 
         {activeTab === 'meta' && (
@@ -263,28 +285,13 @@ function App() {
         )}
 
         {activeTab === 'preview' && (
-          <section id="preview" className="card">
-            <h2>{t('tabs.preview')}</h2>
-            <div id="section-preview" className="preview-grid">
-              <div className="preview-block">
-                <div className="preview-header"><strong>{t('preview.header')}</strong><span className="chip">{t('preview.badge.title')}</span></div>
-                <p className="tooltip" data-title={t('preview.metaHint')}>{t('preview.orgLabel')}: {meta?.orgName||'-'}</p>
-                <div className="row" style={{justifyContent:'center', marginTop:16}}>
-                  <button className="btn" onClick={async () => {
-                    try {
-                      const res = await generateExecutivePdf(effectiveSummary, diagnosis, meta);
-                      toast(t('toast.pdf.success'), 'success');
-                      if (res?.warnings?.length) {
-                        toast('Um ou mais gráficos falharam ao gerar', 'warn');
-                      }
-                    } catch (e) {
-                      toast(String(e?.message || e), 'error');
-                    }
-                  }}>{t('pdf.executive')}</button>
-                </div>
-              </div>
-            </div>
-          </section>
+          <PreviewSection
+            t={t}
+            meta={meta}
+            effectiveSummary={effectiveSummary}
+            diagnosis={diagnosis}
+            toast={toast}
+          />
         )}
 
         <footer className="footer">

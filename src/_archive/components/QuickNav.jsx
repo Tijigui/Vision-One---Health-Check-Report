@@ -1,5 +1,5 @@
 import React from 'react';
-import { useActiveSection } from '../hooks/useActiveSection.js';
+import { useActiveSection } from '../../hooks/useActiveSection.js';
 
 export default function QuickNav({ sections }) {
   const activeId = useActiveSection(sections.map(s => s.id));

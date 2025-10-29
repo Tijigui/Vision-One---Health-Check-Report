@@ -29,6 +29,7 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: system
 .quick-nav a, .quick-nav button { text-decoration: none; font-size: 13px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text); background: var(--bg); cursor: pointer; }
 .quick-nav a:hover, .quick-nav button:hover { filter: brightness(1.15); }
 .quick-nav a.active { background: var(--primary); color: #052e1c; border-color: #16a34a; }
+.quick-nav button.active { background: var(--primary); color: #052e1c; border-color: #16a34a; }
 
 .badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
 .btn { font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
@@ -104,3 +105,10 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: system
 /* Vertical quick-nav */
 .quick-nav.vertical { display: flex; flex-direction: column; gap: 6px; }
 .quick-nav.vertical a { text-align: left; }
+
+/* Mobile layout */
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; top: auto; height: auto; padding-right: 0; }
+  .header-row { flex-direction: column; align-items: stretch; }
+}
