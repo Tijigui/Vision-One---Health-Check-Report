@@ -1,0 +1,36 @@
+{
+  "endpoint": {
+    "realTime": { "required": true, "severity": "high", "name": "Varredura em tempo real", "recommendation": "Habilitar varredura em tempo real em todas as políticas.", "source": "modules.comOSCERTSS.enable" },
+    "behavior": { "required": true, "severity": "high", "name": "Monitoramento de comportamento", "recommendation": "Ativar Behavior Monitoring com bloqueio e prevenção.", "source": "modules.comOSCEBMS.bmEnable" },
+    "webRep": { "required": true, "severity": "medium", "name": "Reputação Web/URL Filter", "recommendation": "Habilitar reputação web e bloqueio de URLs maliciosas.", "source": "modules.comOSCEWRS.urlFilterInOffice|modules.comOSCEWRS.urlFilterOutOffice|modules.comOSCEWRS.httpsPluginInOffice" },
+    "scheduledScan": { "required": true, "severity": "medium", "name": "Varredura agendada", "recommendation": "Agendar varreduras periódicas.", "source": "modules.comOSCESSS.enable" },
+    "networkScan": { "required": true, "severity": "low", "name": "Varredura de rede", "recommendation": "Ativar varredura de compartilhamentos e rede.", "source": "modules.comOSCERTSS.scanNetwork" },
+    "usbBoot": { "required": false, "severity": "low", "name": "Varredura em USB Boot", "recommendation": "Habilitar varredura ao inicializar via USB.", "source": "modules.comOSCERTSS.usbBootScan" },
+    "shutdownScan": { "required": false, "severity": "low", "name": "Varredura ao desligar", "recommendation": "Executar varredura ao desligamento dos endpoints.", "source": "modules.comOSCERTSS.scanShutdown" },
+    "vulnerabilityShield": { "required": true, "severity": "high", "name": "IPS/Vulnerability Shield", "recommendation": "Ativar IPS para bloquear explorações de vulnerabilidades.", "source": "modules.comOSCE_IVPAgent.vulnerabilityShieldState", "equals": 1 }
+  },
+  "server": {
+    "ips": { "required": true, "severity": "high", "name": "IPS em workloads", "recommendation": "Ativar IPS nas workloads críticas.", "source": "modules.comOSCE_IVPAgent.vulnerabilityShieldState", "equals": 1 },
+    "malware": { "required": true, "severity": "high", "name": "Antimalware", "recommendation": "Habilitar antimalware (Smart Scan).", "source": "modules.comOSCESM.cloudScanType", "gt": 0 },
+    "appCtrl": { "required": true, "severity": "high", "name": "Application Control", "recommendation": "Restringir execução de softwares não permitidos.", "source": "modules.comOSCEBMS.srpEnable" }
+  },
+  "cec": {
+    "spam": { "required": true, "severity": "medium", "name": "Antispam", "recommendation": "Habilitar antispam.", "source": "cec.spam" },
+    "incoming": { "required": true, "severity": "high", "name": "Malware (entrada)", "recommendation": "Ativar verificação de malware em entrada.", "source": "cec.inbound" },
+    "outgoing": { "required": true, "severity": "high", "name": "Malware (saída)", "recommendation": "Ativar verificação de malware em saída.", "source": "cec.outbound" },
+    "phishing": { "required": true, "severity": "medium", "name": "Proteção contra phishing", "recommendation": "Habilitar proteção de URLs maliciosas.", "source": "cec.phishing" },
+    "dmarc": { "required": true, "severity": "medium", "name": "Política DMARC", "recommendation": "Aplicar política DMARC para autenticação de domínio.", "source": "cec.dmarc" }
+  },
+  "cgep": {
+    "spf": { "required": true, "severity": "medium", "name": "SPF", "recommendation": "Aplicar SPF para validar domínio remetente.", "source": "cgep.spf" },
+    "dkim": { "required": true, "severity": "medium", "name": "DKIM", "recommendation": "Habilitar DKIM para assinatura de mensagens.", "source": "cgep.dkim" },
+    "tls": { "required": true, "severity": "high", "name": "TLS", "recommendation": "Exigir TLS para transporte seguro.", "source": "cgep.tls" },
+    "sandbox": { "required": true, "severity": "high", "name": "Sandbox", "recommendation": "Habilitar sandbox para anexos suspeitos.", "source": "cgep.sandbox" }
+  },
+  "ddi": {
+    "sandbox": { "required": true, "severity": "high", "name": "Sandbox", "recommendation": "Ativar sandbox para análise avançada.", "source": "ddi.sandbox" },
+    "traffic": { "required": true, "severity": "medium", "name": "Monitoramento de tráfego", "recommendation": "Monitorar tráfego leste-oeste e norte-sul.", "source": "ddi.traffic" },
+    "ioc": { "required": true, "severity": "medium", "name": "Feeds de IoC", "recommendation": "Habilitar feeds de IoC e atualização automática.", "source": "ddi.ioc" },
+    "updates": { "required": true, "severity": "low", "name": "Atualizações", "recommendation": "Manter assinaturas/engines atualizadas.", "source": "ddi.updates" }
+  }
+}

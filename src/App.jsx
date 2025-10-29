@@ -6,6 +6,7 @@ import AreaSection from './components/AreaSection'
 import TemplateExport from './components/TemplateExport.jsx'
 import { useLocalStorage } from './hooks/useLocalStorage.js'
 import { generatePdfFromSummary, generatePdfByCapture } from './services/pdf'
+import { computeBenchmark } from './services/benchmark.js'
 import MetaSection from './components/MetaSection.jsx'
 import AnalysisSection from './components/AnalysisSection'
 import { useToast } from './components/ToastProvider.jsx'
@@ -96,7 +97,7 @@ function App() {
   const [policy, setPolicy] = useLocalStorage('policy', null)
   const [templateArea, setTemplateArea] = useLocalStorage('templateArea', 'endpoint')
   const [areas, setAreas] = useLocalStorage('areas', [])
-  const [meta, setMeta] = useLocalStorage('reportMeta', { org:'', owner:'', env:'', date:'', businessId:'' })
+  const [meta, setMeta] = useLocalStorage('reportMeta', { orgName:'', ownerName:'', environment:'Produção', reportDate:'', businessId:'' })
   const [activeTab, setActiveTab] = useLocalStorage('activeTab', 'import')
 
   const effectiveSummary = useMemo(() => (
@@ -111,6 +112,8 @@ function App() {
     for (const k of keys) res[k] = set.size ? set.has(k) : true
     return res
   }, [areas])
+
+  const diagnosis = useMemo(() => computeBenchmark(effectiveSummary, enabledAreas), [effectiveSummary, enabledAreas])
 
   const quickNavSections = [
     { key: 'import', label: t('tabs.import') },
@@ -141,7 +144,7 @@ function App() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `relatorio-${meta?.org||'org'}.json`
+      a.download = `relatorio-${meta?.orgName||'org'}.json`
       a.click()
       URL.revokeObjectURL(url)
       toast(t('toast.json.success'), 'success')
@@ -164,13 +167,13 @@ function App() {
               onExportJson={handleExportJson}
               onExportPdf={async () => {
                 try {
-                  await generatePdfFromSummary(effectiveSummary, null, enabledAreas, `relatorio-${meta?.org||'org'}.pdf`, { title: t('pdf.title'), meta: { orgName: meta?.org } })
+                  await generatePdfFromSummary(effectiveSummary, null, enabledAreas, `relatorio-${meta?.orgName||'org'}.pdf`, { title: t('pdf.title'), meta: { orgName: meta?.orgName } })
                   toast(t('toast.pdf.success'), 'success')
                 } catch (e) { toast(String(e?.message || e), 'error') }
               }}
               onCapturePdf={async () => {
                 try {
-                  await generatePdfByCapture('section-preview', `relatorio-captura-${meta?.org||'org'}.pdf`, { title: t('pdf.title'), meta: { orgName: meta?.org } })
+                  await generatePdfByCapture('section-preview', `relatorio-captura-${meta?.orgName||'org'}.pdf`, { title: t('pdf.title'), meta: { orgName: meta?.orgName } })
                   toast(t('toast.pdf.success'), 'success')
                 } catch (e) { toast(String(e?.message || e), 'error') }
               }}
@@ -227,11 +230,11 @@ function App() {
           <section id="areas" className="card">
             <h2>{t('tabs.areas')}</h2>
             <div className="preview-grid" aria-label="Resumo por área">
-              <AreaSection areaKey="endpoint" label="Endpoint" summary={effectiveSummary} interpretation={{}} />
-              <AreaSection areaKey="server" label="Server" summary={effectiveSummary} interpretation={{}} />
-              <AreaSection areaKey="cec" label="CEC" summary={effectiveSummary} interpretation={{}} />
-              <AreaSection areaKey="cgep" label="CGEP" summary={effectiveSummary} interpretation={{}} />
-              <AreaSection areaKey="ddi" label="DDI" summary={effectiveSummary} interpretation={{}} />
+              <AreaSection areaKey="endpoint" label="Endpoint" summary={effectiveSummary} interpretation={{}} diagnosis={diagnosis} />
+              <AreaSection areaKey="server" label="Server" summary={effectiveSummary} interpretation={{}} diagnosis={diagnosis} />
+              <AreaSection areaKey="cec" label="CEC" summary={effectiveSummary} interpretation={{}} diagnosis={diagnosis} />
+              <AreaSection areaKey="cgep" label="CGEP" summary={effectiveSummary} interpretation={{}} diagnosis={diagnosis} />
+              <AreaSection areaKey="ddi" label="DDI" summary={effectiveSummary} interpretation={{}} diagnosis={diagnosis} />
             </div>
           </section>
         )}
@@ -256,7 +259,7 @@ function App() {
             <div id="section-preview" className="preview-grid">
               <div className="preview-block">
                 <div className="preview-header"><strong>{t('preview.header')}</strong><span className="chip">{t('preview.badge.title')}</span></div>
-                <p className="tooltip" data-title={t('preview.metaHint')}>{t('preview.orgLabel')}: {meta?.org||'-'}</p>
+                <p className="tooltip" data-title={t('preview.metaHint')}>{t('preview.orgLabel')}: {meta?.orgName||'-'}</p>
               </div>
             </div>
           </section>

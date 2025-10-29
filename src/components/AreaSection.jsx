@@ -63,7 +63,7 @@ function ddiChips(summary) {
   ];
 }
 
-export default function AreaSection({ areaKey, label, summary, interpretation }) {
+export default function AreaSection({ areaKey, label, summary, interpretation, diagnosis }) {
   const modules = summary?.modules || {};
   const chips = areaKey === 'endpoint' ? endpointChips(modules)
     : areaKey === 'server' ? serverChips(modules)
@@ -72,12 +72,20 @@ export default function AreaSection({ areaKey, label, summary, interpretation })
     : ddiChips(summary);
 
   const interp = interpretation?.[areaKey] || (areaKey === 'endpoint' ? summary?.interpretation : '') || `Resumo de ${label}...`;
+  const score = diagnosis?.areas?.[areaKey]?.weightedScore;
+  const status = diagnosis?.areas?.[areaKey]?.status;
 
   return (
     <div className="preview-block">
       <div className="preview-header">
         <h3>{label}</h3>
         <div className="chips">{chips}</div>
+        {typeof score === 'number' && status !== 'n/a' && (
+          <span className="badge" title={`Compliance ${label}: ${score}%`}>Compliance: {score}%</span>
+        )}
+        {status === 'n/a' && (
+          <span className="badge" title={`Sem dados para ${label}`}>Sem dados</span>
+        )}
       </div>
       <p>{interp}</p>
     </div>

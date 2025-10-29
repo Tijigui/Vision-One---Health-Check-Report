@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import Collapsible from './Collapsible.jsx';
-import { computeRecommendations } from '../services/analysis.js';
+import { computeBenchmark } from '../services/benchmark.js';
 
 const AREAS = [
   { key: 'endpoint', label: 'Endpoint' },
@@ -20,7 +20,7 @@ function SeverityChip({ sev }) {
 
 export default function AnalysisSection({ summary, enabledAreas }) {
   const [severity, setSeverity] = useState('all');
-  const rec = useMemo(() => (summary ? computeRecommendations(summary) : null), [summary]);
+  const diag = useMemo(() => (summary ? computeBenchmark(summary, enabledAreas) : null), [summary, enabledAreas]);
   if (!summary) {
     return (
       <div aria-live="polite">
@@ -33,7 +33,7 @@ export default function AnalysisSection({ summary, enabledAreas }) {
   const counts = useMemo(() => {
     const acc = { high: 0, medium: 0, low: 0, total: 0 };
     for (const a of activeAreas) {
-      const items = rec?.[a.key] || [];
+      const items = diag?.failures?.[a.key] || [];
       for (const it of items) {
         acc.total += 1;
         if (it.severity === 'high') acc.high += 1;
@@ -42,7 +42,7 @@ export default function AnalysisSection({ summary, enabledAreas }) {
       }
     }
     return acc;
-  }, [rec, enabledAreas]);
+  }, [diag, enabledAreas]);
 
   const filterBySev = item => severity === 'all' ? true : item.severity === severity;
 
@@ -54,6 +54,9 @@ export default function AnalysisSection({ summary, enabledAreas }) {
           <span className="badge warn" title={`Alta: ${counts.high}`}>Alta: {counts.high}</span>
           <span className="badge warn" title={`Média: ${counts.medium}`}>Média: {counts.medium}</span>
           <span className="badge success" title={`Baixa: ${counts.low}`}>Baixa: {counts.low}</span>
+          {diag && (
+            <span className="badge" title={`Compliance geral: ${diag.overall.weightedScore}%`} style={{marginLeft:8}}>Compliance: {diag.overall.weightedScore}% ({diag.overall.level})</span>
+          )}
         </div>
         <label>Severidade
           <div className="segmented" role="tablist" aria-label="Filtro de severidade">
@@ -67,7 +70,7 @@ export default function AnalysisSection({ summary, enabledAreas }) {
       {activeAreas.map(a => (
         <Collapsible key={a.key} title={`Análise ${a.label}`} defaultOpen={false}>
           <ul className="analysis-list">
-            {(rec?.[a.key] || []).filter(filterBySev).map(item => (
+            {(diag?.failures?.[a.key] || []).filter(filterBySev).map(item => (
               <li key={item.key} className="analysis-item">
                 <div className="row">
                   <strong>{item.name}</strong>
@@ -76,7 +79,7 @@ export default function AnalysisSection({ summary, enabledAreas }) {
                 <div className="desc">{item.recommendation}</div>
               </li>
             ))}
-            {(rec?.[a.key] || []).filter(filterBySev).length === 0 && (
+            {(diag?.failures?.[a.key] || []).filter(filterBySev).length === 0 && (
               <li className="analysis-empty">Nenhuma recomendação para o filtro selecionado.</li>
             )}
           </ul>
