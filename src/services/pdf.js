@@ -10,6 +10,39 @@ function addTitle(doc, text) {
   doc.setFontSize(11);
 }
 
+function addExecutiveSummary(doc, diagnosis, yStart = 40) {
+  if (!diagnosis || !diagnosis.areas) return yStart;
+  let y = yStart;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Sumário Executivo', 14, y);
+  y += 10;
+  const pw = doc.internal.pageSize.getWidth();
+  const barX = 14;
+  const barW = pw - 28;
+  doc.setFont('helvetica', 'normal');
+  const areaKeys = Object.keys(diagnosis.areas);
+  areaKeys.forEach((key) => {
+    const a = diagnosis.areas[key];
+    const label = key.toUpperCase();
+    const pct = Math.max(0, Math.min(100, a.weightedScore || 0));
+    // Label
+    doc.text(`${label}: ${pct}%`, 14, y);
+    y += 6;
+    // Bar background
+    doc.setDrawColor(200);
+    doc.setFillColor(240);
+    doc.rect(barX, y, barW, 6, 'FD');
+    // Bar value
+    const w = (barW * pct) / 100;
+    const color = pct >= 85 ? [0, 180, 0] : pct >= 60 ? [230, 180, 0] : [220, 0, 0];
+    doc.setFillColor(...color);
+    doc.rect(barX, y, w, 6, 'F');
+    y += 12;
+    if (y > 800) { doc.addPage(); y = 40; }
+  });
+  return y;
+}
+
 function addSection(doc, title, lines, yStart) {
   let y = yStart;
   doc.setFont('helvetica', 'bold');
@@ -109,6 +142,10 @@ export async function generatePdfFromSummary(summary, interpretation, enabledAre
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   addTitle(doc, options.title || 'PoC Report - Resultado de Análise');
   let y = 40;
+  if (options.diagnosis) {
+    y = addExecutiveSummary(doc, options.diagnosis, y);
+    y += 8;
+  }
   const linesBy = sectionLinesFromSummary(summary, interpretation, enabledAreas);
   const keys = Object.keys(linesBy);
   for (const key of keys) {

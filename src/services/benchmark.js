@@ -1,4 +1,4 @@
-import bestPractices from '../data/bestPractices.json';
+import defaultBestPractices from '../data/bestPractices.json';
 
 function get(summary, path) {
   if (!summary || !path) return undefined;
@@ -31,9 +31,11 @@ function evalCriterion(summary, crit) {
   return { applicable: true, pass: toBool(value) };
 }
 
-const sevWeight = { high: 3, medium: 2, low: 1 };
+const defaultSevWeight = { high: 3, medium: 2, low: 1 };
 
-export function computeBenchmark(summary, enabledAreas = null) {
+export function computeBenchmark(summary, enabledAreas = null, severityWeights = null, catalogOverride = null) {
+  const sevWeight = { ...defaultSevWeight, ...(severityWeights || {}) };
+  const bestPractices = catalogOverride && typeof catalogOverride === 'object' ? catalogOverride : defaultBestPractices;
   const areas = {};
   const failures = {};
   let totalWeight = 0, passedWeight = 0;

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CGEP Manual Input",
+  "type": "object",
+  "properties": {
+    "enabled": { "type": "boolean", "description": "CGEP habilitado" },
+    "spf": { "type": "boolean" },
+    "dkim": { "type": "boolean" },
+    "tls": { "type": "boolean" },
+    "sandbox": { "type": "boolean" },
+    "notes": { "type": "string" }
+  },
+  "required": ["enabled"],
+  "additionalProperties": true
+}

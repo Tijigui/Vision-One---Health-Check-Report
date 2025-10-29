@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Collapsible from './Collapsible.jsx';
 import { computeBenchmark } from '../services/benchmark.js';
+import { useLocalStorage } from '../hooks/useLocalStorage.js';
 
 const AREAS = [
   { key: 'endpoint', label: 'Endpoint' },
@@ -20,7 +21,9 @@ function SeverityChip({ sev }) {
 
 export default function AnalysisSection({ summary, enabledAreas }) {
   const [severity, setSeverity] = useState('all');
-  const diag = useMemo(() => (summary ? computeBenchmark(summary, enabledAreas) : null), [summary, enabledAreas]);
+  const [weights, setWeights] = useLocalStorage('severityWeights', { high: 3, medium: 2, low: 1 });
+  const [catalogOverride, setCatalogOverride] = useLocalStorage('bestPracticesOverride', null);
+  const diag = useMemo(() => (summary ? computeBenchmark(summary, enabledAreas, weights, catalogOverride) : null), [summary, enabledAreas, weights, catalogOverride]);
   if (!summary) {
     return (
       <div aria-live="polite">
@@ -66,6 +69,28 @@ export default function AnalysisSection({ summary, enabledAreas }) {
             <button role="tab" aria-selected={severity==='low'} className={`btn ${severity==='low'?'active':''}`} onClick={() => setSeverity('low')}>✔ Baixa</button>
           </div>
         </label>
+        <div className="row" style={{gap:12, alignItems:'center'}} aria-label="Configuração de pesos de severidade">
+          <strong>Pesos</strong>
+          <label>Alta <input type="number" min="1" max="10" value={weights.high} onChange={e => setWeights({ ...weights, high: Number(e.target.value)||0 })} style={{width:56}} /></label>
+          <label>Média <input type="number" min="1" max="10" value={weights.medium} onChange={e => setWeights({ ...weights, medium: Number(e.target.value)||0 })} style={{width:56}} /></label>
+          <label>Baixa <input type="number" min="1" max="10" value={weights.low} onChange={e => setWeights({ ...weights, low: Number(e.target.value)||0 })} style={{width:56}} /></label>
+        </div>
+        <div className="row" style={{gap:12, alignItems:'center'}} aria-label="Catálogo de boas práticas dinâmico">
+          <strong>Catálogo</strong>
+          <input type="file" accept="application/json" onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            try {
+              const text = await f.text();
+              const obj = JSON.parse(text);
+              setCatalogOverride(obj);
+            } catch (err) {
+              console.error(err);
+              alert('Arquivo inválido.');
+            }
+          }} />
+          {catalogOverride && <button className="btn" onClick={() => setCatalogOverride(null)}>Limpar catálogo</button>}
+        </div>
       </div>
       {activeAreas.map(a => (
         <Collapsible key={a.key} title={`Análise ${a.label}`} defaultOpen={false}>

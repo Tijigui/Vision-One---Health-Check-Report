@@ -7,10 +7,12 @@ import TemplateExport from './components/TemplateExport.jsx'
 import { useLocalStorage } from './hooks/useLocalStorage.js'
 import { generatePdfFromSummary, generatePdfByCapture } from './services/pdf'
 import { computeBenchmark } from './services/benchmark.js'
+import { downloadJSON, buildFullExport } from './services/export.js'
 import MetaSection from './components/MetaSection.jsx'
 import AnalysisSection from './components/AnalysisSection'
 import { useToast } from './components/ToastProvider.jsx'
 import { useI18n } from './components/I18nProvider.jsx'
+import ManualSection from './components/ManualSection.jsx'
 
 function useDropzone(onFiles) {
   const [dragOver, setDragOver] = useState(false)
@@ -99,6 +101,11 @@ function App() {
   const [areas, setAreas] = useLocalStorage('areas', [])
   const [meta, setMeta] = useLocalStorage('reportMeta', { orgName:'', ownerName:'', environment:'Produção', reportDate:'', businessId:'' })
   const [activeTab, setActiveTab] = useLocalStorage('activeTab', 'import')
+  const [severityWeights, setSeverityWeights] = useLocalStorage('severityWeights', { high: 3, medium: 2, low: 1 })
+  const [bestPracticesOverride] = useLocalStorage('bestPracticesOverride', null)
+  const [manualCEC] = useLocalStorage('manualCEC', { enabled: false })
+  const [manualCGEP] = useLocalStorage('manualCGEP', { enabled: false })
+  const [manualDDI] = useLocalStorage('manualDDI', { enabled: false })
 
   const effectiveSummary = useMemo(() => (
     policy ? { ...policy, meta, areas } : { meta, areas }
@@ -113,13 +120,14 @@ function App() {
     return res
   }, [areas])
 
-  const diagnosis = useMemo(() => computeBenchmark(effectiveSummary, enabledAreas), [effectiveSummary, enabledAreas])
+  const diagnosis = useMemo(() => computeBenchmark(effectiveSummary, enabledAreas, severityWeights, bestPracticesOverride), [effectiveSummary, enabledAreas, severityWeights, bestPracticesOverride])
 
   const quickNavSections = [
     { key: 'import', label: t('tabs.import') },
     { key: 'meta', label: t('tabs.meta') },
     { key: 'areas', label: t('tabs.areas') },
     { key: 'analysis', label: t('tabs.analysis') },
+    { key: 'manual', label: t('tabs.manual') },
     { key: 'models', label: t('tabs.models') },
     { key: 'preview', label: t('tabs.preview') },
   ]
@@ -139,14 +147,8 @@ function App() {
 
   const handleExportJson = () => {
     try {
-      const data = JSON.stringify(effectiveSummary, null, 2)
-      const blob = new Blob([data], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `relatorio-${meta?.orgName||'org'}.json`
-      a.click()
-      URL.revokeObjectURL(url)
+      const payload = buildFullExport({ summary: effectiveSummary, diagnosis, meta, policyText, weights: severityWeights, manualInputs: { cec: manualCEC, cgep: manualCGEP, ddi: manualDDI } })
+      downloadJSON(payload, `relatorio-${meta?.orgName||'org'}.json`)
       toast(t('toast.json.success'), 'success')
     } catch (e) {
       toast(String(e?.message || e), 'error')
@@ -167,7 +169,7 @@ function App() {
               onExportJson={handleExportJson}
               onExportPdf={async () => {
                 try {
-                  await generatePdfFromSummary(effectiveSummary, null, enabledAreas, `relatorio-${meta?.orgName||'org'}.pdf`, { title: t('pdf.title'), meta: { orgName: meta?.orgName } })
+                  await generatePdfFromSummary(effectiveSummary, null, enabledAreas, `relatorio-${meta?.orgName||'org'}.pdf`, { title: t('pdf.title'), meta: { orgName: meta?.orgName }, diagnosis })
                   toast(t('toast.pdf.success'), 'success')
                 } catch (e) { toast(String(e?.message || e), 'error') }
               }}
@@ -243,6 +245,13 @@ function App() {
           <section id="analysis" className="card">
             <h2>{t('tabs.analysis')}</h2>
             <AnalysisSection summary={effectiveSummary} enabledAreas={enabledAreas} />
+          </section>
+        )}
+
+        {activeTab === 'manual' && (
+          <section id="manual" className="card">
+            <h2>{t('tabs.manual')}</h2>
+            <ManualSection />
           </section>
         )}
 

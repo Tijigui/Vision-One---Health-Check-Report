@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CEC Manual Input",
+  "type": "object",
+  "properties": {
+    "enabled": { "type": "boolean", "description": "CEC habilitado" },
+    "antispam": { "type": "boolean" },
+    "inbound": { "type": "boolean" },
+    "outbound": { "type": "boolean" },
+    "phishing": { "type": "boolean" },
+    "dmarc": { "type": "boolean" },
+    "notes": { "type": "string" }
+  },
+  "required": ["enabled"],
+  "additionalProperties": true
+}
