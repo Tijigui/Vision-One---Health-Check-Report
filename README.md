@@ -4,7 +4,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Build: Vite](https://img.shields.io/badge/Build-Vite-brightgreen)
-![React: 19](https://img.shields.io/badge/React-19-blue)
+![React: 18.2](https://img.shields.io/badge/React-18.2-blue)
 
 Aplicação React + Vite para Health Check e diagnóstico de compliance, com importação de `.cmpolicy`, benchmark de boas práticas e geração de relatórios.
 
